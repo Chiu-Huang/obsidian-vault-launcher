@@ -73,3 +73,27 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\ching\Desktop\
 ```powershell
 & "C:\Users\ching\Desktop\Codex\random\obsidian-vault-launcher\ov-core.ps1" -Folder "." -CheckOnly
 ```
+
+## Executable entry point (2026-11-05)
+
+The optional `ov.exe` entry point supports Explorer's address bar through a per-user Windows App Paths registration. It preserves the launching process's working directory, so `ov .` resolves that directory before calling the existing script.
+
+Install or rebuild from this directory:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-exe.ps1
+```
+
+The installer uses the Windows .NET Framework C# compiler; no administrator access is needed. Keep `ov.exe` beside `ov-core.ps1`. The executable is generated locally and excluded from Git. The existing PATH installer is still needed for terminal command discovery. App Paths supplies discovery for Windows Shell launches.
+
+Check folder resolution in a terminal: `ov --check .`. In Explorer's address bar, try `ov .`. Explorer's actual working-directory behavior should be verified on your Windows setup. Fallback: `cmd /k ov .`.
+
+Remove the executable and its matching App Paths registration:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall-exe.ps1
+```
+
+This leaves `ov.cmd` and the existing PATH entry intact. Git alone does not undo registry changes; run the uninstall script before reverting the executable changes.
+
+The earlier 2026-10-30 installation notes above are historical. The CLI is now installed on the original machine. New/unregistered folders still require the running Obsidian app and the unofficial IPC workaround. Windows PowerShell path quoting and CLI error reporting were fixed before the executable was added. The known-working pre-executable Git commit is `d795407`.
