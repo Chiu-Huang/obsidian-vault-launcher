@@ -1,99 +1,69 @@
-# ov — Windows 資料夾快速開啟 Obsidian Vault
+# Obsidian Vault Launcher for Windows
 
-工具位置：`C:\Users\ching\Desktop\Codex\random\obsidian-vault-launcher`
+Open a folder as an Obsidian vault with `ov .`, from File Explorer's address bar or a terminal.
 
-## 使用方式
+Explorer launches are quiet on success. Failures display a dialog with the error. Terminal launches retain text output. `ov --check .` shows the resolved folder without opening Obsidian.
 
-在 Windows File Explorer 開啟任意資料夾，點擊網址列，輸入：
+## Install
 
-```cmd
+Requirements: Windows 10/11, Windows PowerShell 5.1, .NET Framework 4.5+ with its C# compiler, and Obsidian installed with its `obsidian://` handler registered. No .NET SDK or administrator privileges are required. Tested on the author's Windows machine; broader Windows compatibility has not yet been verified.
+
+Clone this repository to a permanent location, open PowerShell in that folder, and run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+The installer builds `ov.exe` locally, registers it under the current user's Windows App Paths, and adds this folder to the user's PATH for terminal use. Open a new terminal afterward. Keep the checkout in place: the executable needs `ov-core.ps1` beside it. Rerun the installer after updating the source. If moving the checkout, uninstall first and install again in the new location.
+
+The repository is currently private, so other users need repository access before they can clone it.
+
+## Use
+
+In File Explorer, open the desired folder, click the address bar and type:
+
+```text
 ov .
 ```
 
-也可以在 PowerShell 或 CMD 指定路徑：
+In PowerShell or CMD:
 
-```cmd
+```powershell
+ov .
 ov "D:\My Notes"
+ov --check .
 ```
 
-或不輸入參數時，使用命令提示字元的目前工作資料夾：
+Already registered vaults open through the official Obsidian URI. For a folder that has never been registered, enable Obsidian's CLI under Settings → General and keep Obsidian running. The launcher must be able to find `Obsidian.com` on PATH or in a standard installation location. Consult the [official CLI setup documentation](https://obsidian.md/help/cli).
 
-```cmd
-ov
-```
+Opening unregistered folders currently uses an **unofficial internal Obsidian IPC call**, via CLI `eval`. It may stop working after an Obsidian update. If the CLI is missing, the launcher opens the vault chooser and explains that manual setup is needed. It does not directly edit the global vault registry.
 
-## 目前狀態（2026-10-30 本機實測）
+## Troubleshooting
 
-- 已將本工具目錄加入 **使用者 PATH**，不需要管理員權限。
-- 已登錄的 Vault：**可直接開啟**，使用 Obsidian 官方 `obsidian://open?vault=...` URI。
-- 本機 Obsidian 安裝版本：**1.9.14**；官方命令列工具 `Obsidian.com` **尚不存在**。
-- 尚未登錄的新資料夾：目前 `ov` 會提示缺少 CLI，並開啟 Obsidian 的 Vault Manager，需要手動選擇一次資料夾。
-- 驗證結果：`ov.cmd "C:\Users\ching\Desktop\Codex\random"` 成功執行，返回碼 0。
+- If Explorer searches the web, rerun `install.ps1` and check `ov.exe` exists. Fallback: `cmd /k ov .`.
+- If a terminal cannot find `ov`, open a new terminal; signing out and back in may be necessary for stale PATH environments.
+- Use `ov --check .` to inspect which directory Windows passed to the launcher.
+- For detailed output or to wait synchronously in CMD, use `ov.cmd .`. The GUI executable can return control to an interactive CMD prompt before it finishes.
+- An existing App Paths registration pointing to another `ov.exe` causes installation to stop, rather than overwrite it.
 
-## 讓新資料夾也可一行命令開啟（需要你手動完成）
+## Uninstall or revert
 
-1. 先備份重要筆記與 Obsidian 設定（例：`%APPDATA%\obsidian`）。
-2. 從 [Obsidian 官方下載頁](https://obsidian.md/download) 安裝較新版 Obsidian；需要 **1.12.7 或更新的安裝程式**（僅在 App 內更新不一定更新 CLI 安裝組件）。
-3. 開啟 Obsidian → **Settings → General → Command line interface**，啟用 CLI，依照畫面指示完成註冊。
-4. 關閉並重新開啟終端機；輸入 `obsidian version` 確認 CLI 正常。此時再使用 `ov .`，工具會自動找到 `Obsidian.com`。
-5. 對新資料夾執行 `ov .`。程式會透過 Obsidian CLI 的 `eval` 呼叫社群提出的內部 IPC `vault-open`。
-
-**注意：** 新資料夾的自動開啟依賴 **非官方** Obsidian Electron IPC，未獲官方相容性保證；未來若更新造成失效，需修改 `ov-core.ps1`。工具不會直接修改全域 `obsidian.json` 的 Vault 登錄紀錄。
-
-參考文件：
-- 官方 CLI：<https://obsidian.md/help/cli>
-- 社群 workaround：<https://forum.obsidian.md/t/open-a-folder-as-a-new-obsidian-vault-using-its-filepath-via-the-uri/112323>
-
-## 如果輸入 `ov .` 找不到命令
-
-已完成使用者 PATH 註冊，但 **目前已開啟的 Explorer / Terminal 可能仍沿用舊 PATH**。
-
-1. 先新開一個 PowerShell / CMD，輸入 `where.exe ov`。
-2. 如果還找不到，**登出 Windows 再登入**（或者重新啟動 Explorer），再測試。
-3. 可用下列命令重複安裝 PATH（不會重複加入）：
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\ching\Desktop\Codex\random\obsidian-vault-launcher\install-path.ps1"
-```
-
-在 PowerShell 也可不經 PATH 直接執行：
-
-```powershell
-& "C:\Users\ching\Desktop\Codex\random\obsidian-vault-launcher\ov.cmd" .
-```
-
-## 檔案說明
-
-- `ov.cmd`：Windows File Explorer、CMD、PowerShell 使用的入口。
-- `ov-core.ps1`：檢查路徑、查詢既有 Vault，並呼叫 URI 或 CLI。
-- `install-path.ps1`：僅追加本目錄到**目前使用者**的 PATH。
-
-`ov-core.ps1` 另支援 `-CheckOnly`（僅偵測、不開啟）：
-
-```powershell
-& "C:\Users\ching\Desktop\Codex\random\obsidian-vault-launcher\ov-core.ps1" -Folder "." -CheckOnly
-```
-
-## Executable entry point (2026-11-05)
-
-The optional `ov.exe` entry point supports Explorer's address bar through a per-user Windows App Paths registration. It preserves the launching process's working directory, so `ov .` resolves that directory before calling the existing script.
-
-Install or rebuild from this directory:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-exe.ps1
-```
-
-The installer uses the Windows .NET Framework C# compiler; no administrator access is needed. Keep `ov.exe` beside `ov-core.ps1`. The executable is generated locally and excluded from Git. The existing PATH installer is still needed for terminal command discovery. App Paths supplies discovery for Windows Shell launches.
-
-Check folder resolution in a terminal: `ov --check .`. In Explorer's address bar, try `ov .`. Explorer's actual working-directory behavior should be verified on your Windows setup. Fallback: `cmd /k ov .`.
-
-Remove the executable and its matching App Paths registration:
+From the checkout, run:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall-exe.ps1
 ```
 
-This leaves `ov.cmd` and the existing PATH entry intact. Git alone does not undo registry changes; run the uninstall script before reverting the executable changes.
+This removes the generated executable and its matching App Paths registration. The original `ov.cmd` and PATH entry remain usable. To uninstall completely, also remove this checkout's directory from your **user PATH** in Windows Environment Variables, then remove the checkout.
 
-The earlier 2026-10-30 installation notes above are historical. The CLI is now installed on the original machine. New/unregistered folders still require the running Obsidian app and the unofficial IPC workaround. Windows PowerShell path quoting and CLI error reporting were fixed before the executable was added. The known-working pre-executable Git commit is `d795407`.
+Git reverts do not undo Windows registry changes. Run the uninstall script before returning to the pre-executable version (`d795407`). The initial executable version is `e54a059`.
+
+## Files
+
+- `Launcher.cs`: small GUI executable; attaches to an existing terminal when available, otherwise shows failures in a dialog.
+- `ov-core.ps1`: vault discovery and Obsidian opening logic.
+- `ov.cmd`: original terminal entry point.
+- `install.ps1`: combined installation; `install-exe.ps1` and `install-path.ps1` can also run separately.
+- `uninstall-exe.ps1`: removes the executable integration.
+
+`ov.exe` and local backup files are excluded from Git. Source is compiled locally during installation.
